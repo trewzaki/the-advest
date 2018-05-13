@@ -1,0 +1,23 @@
+{
+    "name": "api/the_advest",
+    "authors": [
+        {
+            "name": "Tananut Panyagosa",
+            "email": "tongtananut@gmail.com"
+        }
+    ],
+    "require": {
+        "monolog/monolog": "^1.22",
+        "phpunit/phpunit": "3.7.*",
+		"php-mrme/php-mrme":"1.0.0.x-dev",
+        "curl/curl": "^1.6",
+        "firebase/php-jwt": "^4.0"
+    },
+    "autoload":{
+    	"psr-4": {
+            "Api\\":"src/Api",
+            "Security\\":"src/Security"
+        }
+    }
+
+}

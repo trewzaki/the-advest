@@ -308,9 +308,9 @@ class Stock extends Controller
 		}
 
 		$this->response->success(array("success" => true,
-									   "model"	 => array($model1,
-														  $model2,
-														  $model3)));
+									   "model"	 => array("1year"  => $model1,
+														  "3years" => $model2,
+														  "5years" => $model3)));
 
 		// $this->response->success(array("success" => true,
 		// 							   "count"	 => $count,
@@ -349,52 +349,190 @@ class Stock extends Controller
 		header('Content-Type: application/json');
 		
 		$stock_list = $this->request->body->stock_list;
-		$year 		= $this->request->body->year;
+		// $year 		= $this->request->body->year;
 
-		$min = 1000000;
-		$max = -1;
+		// $this->db->select("`stock_avg`", $stock_list);
 
-		$this->db->select("`stock_avg`", $stock_list);
-
-		switch ($year) 
-		{
-			case 5:
-				$this->db->where("id", "=", 2);
-				break;
+		// switch ($year) 
+		// {
+		// 	case 5:
+		// 		$this->db->where("id", "=", 2);
+		// 		break;
 			
-			case 3:
-				$this->db->where("id", "=", 3);
-				break;
+		// 	case 3:
+		// 		$this->db->where("id", "=", 3);
+		// 		break;
 
-			case 1:
-				$this->db->where("id", "=", 4);
-				break;
-		}
+		// 	case 1:
+		// 		$this->db->where("id", "=", 4);
+		// 		break;
+		// }
 
+		// $model = $this->db->executeReader();
+
+		// foreach ($model as $m) 
+		// {
+		// 	foreach ($m as $m_mini => $value) 
+		// 	{
+		// 		if ($value > 0)
+		// 		{
+		// 			if ($value > $max)
+		// 				$max = $value;
+		// 			if ($value < $min)
+		// 				$min = $value;
+		// 		}
+		// 	}
+		// }
+
+		// $min = ceil($min);
+		// $max = floor($max);
+
+		// // $this->response->success($model);
+
+		// $this->response->success(array("success" => true,
+		// 							   "model"	 => array("min" => $min,
+		// 							   					  "max" => $max)));
+
+
+		
+		$this->db->select("`stock`", $stock_list);
+		
 		$model = $this->db->executeReader();
 
+		$isNull = false;
+
+		$count = 0;
 		foreach ($model as $m) 
 		{
 			foreach ($m as $m_mini => $value) 
 			{
-				if ($value > 0)
+				if (is_null($value))
 				{
-					if ($value > $max)
-						$max = $value;
-					if ($value < $min)
-						$min = $value;
+					$isNull = true;
+					break;
 				}
+			}
+			if (!$isNull) 
+				$count++;
+			
+			$isNull = false;
+		}
+
+		$model1 = array("min" => 0,
+						"max" => 0);
+
+		$model2 = array("min" => 0,
+						"max" => 0);
+
+		$model3 = array("min" => 0,
+						"max" => 0);
+
+		for ($year=5; $year>0; $year-=2)
+		{
+			$min = 1000000;
+			$max = -1;
+
+			switch ($year) 
+			{
+				case 3:
+					if ($count > 732)
+						$count = 732;
+					break;
+				
+				case 1:
+					if ($count > 245)
+					$count = 245;
+					break;
+			}
+
+			$avg0 = 0.0;
+			$avg1 = 0.0;
+			$avg2 = 0.0;
+			$avg3 = 0.0;
+			$avg4 = 0.0;
+
+			$loop_number = 0;
+			foreach ($model as $m) 
+			{
+				if ($loop_number++ == $count)
+					break;
+
+				$tmp_array = (array) ($m);
+				$tmp_array = array_values($tmp_array);
+
+				$avg0 += $tmp_array[0];
+				$avg1 += $tmp_array[1];
+				$avg2 += $tmp_array[2];
+				$avg3 += $tmp_array[3];
+				$avg4 += $tmp_array[4];
+			}
+
+			$avg0 = pow((1 + (($avg0/$count)/100)), 245) -1;
+			$avg1 = pow((1 + (($avg1/$count)/100)), 245) -1;
+			$avg2 = pow((1 + (($avg2/$count)/100)), 245) -1;
+			$avg3 = pow((1 + (($avg3/$count)/100)), 245) -1;
+			$avg4 = pow((1 + (($avg4/$count)/100)), 245) -1;
+
+			$tmp_array_avg = array($avg0*100, $avg1*100, $avg2*100, $avg3*100, $avg4*100);
+			// var_dump($tmp_array_avg);
+
+			switch ($year) 
+			{
+				case 1:
+					foreach ($tmp_array_avg as $tma) 
+					{
+						if ($max < $tma)
+							$max = $tma;
+						if ($min > $tma && $tma > 0)
+							$min = $tma;
+					}
+					
+					$min = ceil($min);
+					$max = floor($max);
+
+					$model1["min"] = $min;
+					$model1["max"] = $max;
+					break;
+				
+				case 3:
+					foreach ($tmp_array_avg as $tma) 
+					{
+						if ($max < $tma)
+							$max = $tma;
+						if ($min > $tma && $tma > 0)
+							$min = $tma;
+					}
+										
+					$min = ceil($min);
+					$max = floor($max);
+					
+					$model2["min"] = $min;
+					$model2["max"] = $max;
+					break;
+
+				case 5:
+					foreach ($tmp_array_avg as $tma) 
+					{
+						if ($max < $tma)
+							$max = $tma;
+						if ($min > $tma && $tma > 0)
+							$min = $tma;
+					}
+										
+					$min = ceil($min);
+					$max = floor($max);
+					
+					$model3["min"] = $min;
+					$model3["max"] = $max;
+					break;
 			}
 		}
 
-		$min = ceil($min);
-		$max = floor($max);
-
-		// $this->response->success($model);
-
 		$this->response->success(array("success" => true,
-									   "model"	 => array("min" => $min,
-									   					  "max" => $max)));
+									   "model"	 => array("1year"  => $model1,
+														  "3years" => $model2,
+														  "5years" => $model3)));
+		
 	}
 }
 ?>
